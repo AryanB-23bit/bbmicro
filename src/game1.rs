@@ -11,7 +11,8 @@ pub struct Game1 {
     curr_speed: f32,
     marker: f32, 
     marker_vel: f32,
-    marker_speed: f32
+    marker_speed: f32,
+    lives: u8
 }
 
 impl Game1 {
@@ -24,7 +25,8 @@ impl Game1 {
             curr_speed: 2.0,
             marker: 50.0,
             marker_vel: 5.0,
-            marker_speed: 5.0
+            marker_speed: 5.0,
+            lives: 3
         }
     }
 
@@ -105,6 +107,10 @@ impl BBMicroGame for Game1 {
 
         api.rectfill(5.0,self.y, 15.0,5.0+self.y, 4);
         api.rectfill(15.0, self.marker, 20.0, 8.0+self.marker, 7);
+        
+        for i in 0..self.lives {
+            api.spr(2, 100.0 + (i as f32)*10.0, 20.0, 8.0, 8.0, false, false);
+        }
 
        //api.spr(2, self.x,  20.0, 32.0, 32.0, true, true);
     }
