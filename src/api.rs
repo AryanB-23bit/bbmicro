@@ -340,6 +340,17 @@ impl<'a> BBMicroApi<'a> {
         self.canvas.draw_rect(r);
     }
 
+    pub fn rectfill(&mut self, x0: f32, y0: f32, x1: f32, y1: f32, col: Color) {
+        let (x0, y0) = self.to_camera(x0, y0);
+        let (x1, y1) = self.to_camera(x1, y1);
+
+        self.canvas.set_draw_color(self.to_sdl_color(col));
+        let w = x1 - x0;
+        let h = y1 - y0;
+        let r = Rect::new(x0 as i32, y0 as i32, w as u32, h as u32);
+        self.canvas.fill_rect(r);
+    }
+    
     pub fn flip(&mut self) {
         self.canvas.present();
 
