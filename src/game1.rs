@@ -12,7 +12,13 @@ pub struct Game1 {
     marker: f32, 
     marker_vel: f32,
     marker_speed: f32,
-    lives: u8
+    // lives: u8,
+    // message: String,
+    joe_count: u8,
+    vald_count: u8,
+    game_lvl: u8,
+    rng: ThreadRng
+
 }
 
 impl Game1 {
@@ -26,12 +32,17 @@ impl Game1 {
             marker: 50.0,
             marker_vel: 5.0,
             marker_speed: 5.0,
-            lives: 3
+            // lives: 3,
+            // message: String::from("You are tied"),
+            joe_count: 0,
+            vald_count: 0,
+            game_lvl: 1,
+            rng: rand::thread_rng()
         }
     }
 
     fn collides(&mut self) -> bool {
-        if (self.y <= self.marker + 8.0 && self.y >= self.marker ) {
+        if self.y <= self.marker + 8.0 && self.y >= self.marker{
             return true ;
         } 
         else {
@@ -39,7 +50,41 @@ impl Game1 {
         }
     }
 
+    fn draw_putin(&mut self, api: &mut BBMicroApi, x: f32, y:f32, w:f32, h:f32) {
+        let rw = w  / 4.0;
+        let rh = h / 5.0;
 
+        for tx in 0..4 {
+            for ty in 0..5 {   
+                let n = tx + ty*16;     
+                api.spr(n, x+(rw*(tx as f32)), y+(rh*ty as f32), rw, rh, false, false);
+            }
+        }
+    }
+
+    fn draw_joe(&mut self, api: &mut BBMicroApi, x: f32, y:f32, w:f32, h:f32) {
+        let rw = w  / 4.0;
+        let rh = h / 5.0;
+
+        for tx in 0..4 {
+            for ty in 0..5 {   
+                let n = (4+tx) + ty*16;     
+                api.spr(n, x+(rw*(tx as f32)), y+(rh*ty as f32), rw, rh, false, false);
+            }
+        }  
+    }   
+
+    fn draw_nuke(&mut self, api: &mut BBMicroApi, x: f32, y:f32, w:f32, h:f32) {
+        let rw = w  / 4.0;
+        let rh = h / 16.0;
+
+        for tx in 0..4 {
+            for ty in 0..16 {   
+                let n = (8+tx) + ty*16;     
+                api.spr(n, x+(rw*(tx as f32)), y+(rh*ty as f32), rw, rh, false, false);
+            }
+        }   
+    }   
 }
 
 // enum Tiles {
@@ -64,6 +109,10 @@ impl BBMicroGame for Game1 {
 
 
     fn update(&mut self, api: &mut BBMicroApi) {
+        if self.vald_count == 3 {
+            return;
+        }
+
         self.count += 1;
 
         if api.btn(Button::LEFT) {
@@ -71,11 +120,28 @@ impl BBMicroGame for Game1 {
         }
 
         if api.btnp(Button::A) {
-            if self.collides() {
-                println!("Nuke Stopped")
+            if self.collides() || api.btn(Button::UP) {
+                self.joe_count += 1;
+                if self.joe_count == 3 {
+                    // go to the next level
+                    self.game_lvl += 1;
+                    self.curr_speed = self.rng.gen_range(0.5..10.0); // make a random number;
+                    self.marker_speed = self.rng.gen_range(0.5..10.0); //make a random number;
+                    self.vel = self.curr_speed;
+                    self.marker_vel = self.marker_speed;
+                    if self.rng.gen::<f32>() > 0.5 {
+                        self.vel *= -1.0;
+                    }
+                    if self.rng.gen::<f32>() > 0.5 {
+                        self.marker_vel *= -1.0;
+                    }
+                    
+                    self.joe_count = 0;
+                    self.vald_count = 0;
+                }
             }
             else {
-                println!("Test")
+                self.vald_count += 1;
             }
         }
         if self.x < 0.0 {
@@ -101,17 +167,35 @@ impl BBMicroGame for Game1 {
     }
 
     fn draw(&mut self, api: &mut BBMicroApi) {
-        //api.camera(self.x - 60.0, self.y - 60.0);
-        api.cls(3);
-        api.rect(5.0, 5.0, 15.0, 120.0, 10);
+        api.cls(4);     //api.camera(self.x - 60.0, self.y - 60.0);
+        
+        if self.vald_count == 3 {
+            // TODO: draw the rocket
+            api.print("YOU LOSE PUTIN SHOOTIN", 0.0, 10.0, false, 5.0, 5.0);
+            self.draw_nuke(api, 50.0, 20.0, 1.0*32.0, 4.0*32.0);
+            return;
+        }
+     
+        api.rect(5.0, 5.0, 15.0, 120.0, 1);
 
-        api.rectfill(5.0,self.y, 15.0,5.0+self.y, 4);
+        
+        api.rectfill(5.0,self.y, 15.0,5.0+self.y, 8);
+        //self.draw_putin(api, 5.0, self.y, 10.0, 5.0);
         api.rectfill(15.0, self.marker, 20.0, 8.0+self.marker, 7);
         
-        for i in 0..self.lives {
-            api.spr(2, 100.0 + (i as f32)*10.0, 20.0, 8.0, 8.0, false, false);
+
+        for i in 0..self.joe_count {
+            self.draw_joe(api,  60.0 + (i as f32)*20.0, 10.0, 16.0, 20.0);
         }
 
+        for i in 0..self.vald_count {
+            self.draw_putin(api,  60.0 + (i as f32)*20.0, 100.0, 16.0, 20.0);
+        }
+
+        // Use graphics to represent the level
+        api.print("LEVEL ",  20.0, 60.0, false, 4.0, 4.0);
+
+        //self.draw_putin(api, 50.0, 50.0, 16.0, 20.0)
        //api.spr(2, self.x,  20.0, 32.0, 32.0, true, true);
     }
 }

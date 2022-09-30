@@ -287,13 +287,13 @@ impl<'a> BBMicroApi<'a> {
         let src_y = (n / 16) * 8;
 
         let src_rect = Rect::new(src_x as i32, src_y as i32, 8, 8);
-        let dst_rect = Rect::new(x as i32, y as i32, 8, 8);
+        let dst_rect = Rect::new(x as i32, y as i32, w as u32, h as u32);
         self.canvas
             .copy(&self.sprites_texture, src_rect, dst_rect)
             .unwrap();
     }
 
-    pub fn print(&mut self, text: &str, x: f32, y: f32, use_camera: bool) {
+    pub fn print(&mut self, text: &str, x: f32, y: f32, use_camera: bool, w:f32, h:f32) {
         let mut curr_x = x;
         let mut curr_y = y;
 
@@ -318,14 +318,14 @@ impl<'a> BBMicroApi<'a> {
                         font_entry.height() as u32,
                     );
                     let dst_rect =
-                        Rect::new((curr_x - offset_x) as i32, (curr_y - offset_y) as i32, 8, 8);
+                        Rect::new((curr_x - offset_x) as i32, (curr_y - offset_y) as i32, w as u32, h as u32);
                     self.canvas
                         .copy(&self.font_texture, src_rect, dst_rect)
                         .unwrap();
                 }
                 None => {}
             }
-            curr_x += 8.0;
+            curr_x += w;
         }
     }
 
